@@ -126,7 +126,6 @@ public class BaseballElimination{
 
 				for(FlowEdge e : team.FlowNet.adj(0)) {
 					if(e.capacity() != e.flow()) {
-						// System.out.println(e);
 						team.eliminated = true;
 						this.eliminated.add(team.name);
 						break;
