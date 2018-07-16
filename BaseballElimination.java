@@ -39,11 +39,56 @@ import java.io.File;
 //Do not change the name of the BaseballElimination class
 public class BaseballElimination{
 
+	public class TeamFlowData {
+		public int wins;
+		public int gamesLeft;
+		public FlowNetwork FlowNet;
+		public int[] W; // wins + gamesLeft - Wi
+		public int N;
+		public FlowEdge[] versusEdges;
+		public String name;
+		public boolean eliminated = false;
+		public int index;
+
+		public TeamFlowData(int N, int i) {
+			this.N = N;
+			this.W = new int[N];
+			this.FlowNet = new FlowNetwork(N*N + N+1);
+			this.eliminated = false;
+			this.index = i;
+		}
+
+		public boolean setWEdges(TeamFlowData[] teams) {
+			int W;
+			for(int i = 0; i < this.N; i++) {
+				W = this.wins + this.gamesLeft - teams[i].wins;
+				System.out.printf("Team: %s: Wins: %d + gamesLeft: %d - %sWins(%d) = %d", this.name, this.wins, this.gamesLeft, teams[i].name, teams[i].wins, W);
+				System.out.println();
+				if(W < 0) {
+					this.eliminated = true;
+					return true;
+				}
+
+				this.addEdge(new FlowEdge(index+1, this.V()-1, W));
+			}
+			return false;
+		}
+
+		public void addEdge(FlowEdge e) {
+			FlowNet.addEdge(e);
+		}
+
+		public int V() {
+			return FlowNet.V();
+		}
+
+	}
+
 	// We use an ArrayList to keep track of the eliminated teams.
 	public ArrayList<String> eliminated = new ArrayList<String>();
-	private String[] teams;
-	private int[][] teamData;
 	private int N;
+	TeamFlowData[] Teams;
+	private int[][] versusData;
 
 	/* BaseballElimination(s)
 		Given an input stream connected to a collection of baseball division
@@ -54,40 +99,116 @@ public class BaseballElimination{
 		team is eliminated.
 	*/
 	public BaseballElimination(Scanner s){
-		this.buildTeamsData(s);
+		this.N = s.nextInt();
+		this.Teams = this.initializeTeams(this.N);
+		for(int i = 0; i < N; i++) {
+			this.addTeamDataToFlows(i, s);
+ 		}
+		for(int i = 0; i < N; i++) {
+			this.Teams[i].setWEdges(this.Teams); // eliminated?
+		}
+
+		for(TeamFlowData team : this.Teams) {
+			if(team.eliminated) {
+				eliminated.add(team.name);
+			}
+		}
 		// this.printTeamData();
 	}
 
-	public void printTeamData() {
-		for(int i = 0; i < this.N; i++) {
-			System.out.printf("%s:    ", this.teams[i]);
-			for(int j = 0; j < N+2; j++) {
-				System.out.printf("%d, ", this.teamData[i][j]);
+	public TeamFlowData[] initializeTeams(int N) {
+		TeamFlowData[] Teams = new TeamFlowData[N];
+		for(int i = 0; i < Teams.length; i++) {
+			Teams[i] = new TeamFlowData(N, i);
+		}
+		return Teams;
+	}
+
+	public void addTeamDataToFlows(int i, Scanner s) {
+		int N = this.N;
+		int numGames;
+		TeamFlowData team = this.Teams[i];
+		team.name = s.next();
+		team.wins = s.nextInt();
+		team.gamesLeft = s.nextInt();
+		System.out.printf("Name: %s\n Wins: %d\n GamesLeft: %d\n VersusData:\n", team.name, team.wins, team.gamesLeft);
+		for(int j = 3; j < N+3; j++) {
+			numGames = s.nextInt();
+			System.out.printf("vs%d: %d\n", j-3, numGames);
+			if(numGames != 0) {
+				this.addVersusEdges(i, j, numGames);
 			}
-			System.out.println();
-		}
-		System.out.println();
-	}
-
-	public void buildTeamsData(Scanner s) {
-		this.N = s.nextInt();
-		// Rows: Team
-		// Columns: 0: wins, 1: games left, (2 to N+2-1): games left versus Ni
-		this.teamData = new int[N][N+2];
-		this.teams = new String[N];
-
-		for(int i = 0; i < N; i++) {
-			this.setDataForTeam(i, s);
- 		}
-	}
-
-	public void setDataForTeam(int i, Scanner s) {
-		this.teams[i] = s.next();
-		for(int j = 0; j < N+2; j++) {
-			this.teamData[i][j] = s.nextInt();
-			printTeamData();
 		}
 	}
+
+	public void addVersusEdges(int i, int j, int numGames) {
+		TeamFlowData[] teams = this.Teams;
+		int N = this.N;
+		int versusIndex;
+		FlowEdge sToVersusEdge, iEdge, jEdge;
+		for(int k = 0; k < N; k++) {
+			if(k == i) continue;
+			versusIndex = i*N+(j+1); // Represents the index of the i vs j games left vertex
+			sToVersusEdge = new FlowEdge(0, versusIndex, numGames);
+			iEdge = new FlowEdge(versusIndex, i+1, Double.POSITIVE_INFINITY);
+			jEdge = new FlowEdge(versusIndex, j+1, Double.POSITIVE_INFINITY);
+			teams[k].addEdge(sToVersusEdge);
+			teams[k].addEdge(iEdge);
+			teams[k].addEdge(jEdge);
+		}
+	}
+
+	// public FlowNetwork buildFlowNetwork() {
+	// 	FlowNetwork FlowNet = new FlowNetwork();
+	// }
+
+	// public void printTeamData() {
+	// 	for(int i = 0; i < this.N; i++) {
+	// 		System.out.printf("%s:    ", this.teams[i]);
+	// 		for(int j = 0; j < N+2; j++) {
+	// 			System.out.printf("%d, ", this.teamData[i][j]);
+	// 		}
+	// 		System.out.println();
+	// 	}
+	// 	System.out.println();
+	// }
+
+	// public void buildTeamsData(Scanner s) {
+	// 	this.N = s.nextInt();
+	// 	int N = this.N;
+	// 	this.FlowNetworks = new FlowNetwork[N];
+	// 	// Rows: Team
+	// 	// Columns: 0: wins, 1: games left, (2 to N+2-1): games left versus Ni
+	// 	this.teamData = new int[N][N+2];
+	// 	this.teams = new String[N];
+	//
+	// 	for(int i = 0; i < N; i++) {
+	// 		this.setDataForTeam(i, s);
+ 	// 	}
+	// }
+
+	// public void setDataForTeamDEPRECATED(int i, Scanner s) {
+	// 	int data;
+	// 	FlowEdge sEdge, iedge, jedge, itEdge, jtEdge;
+	// 	this.FlowNetworks[i] = new FlowNetwork(this.N*this.N +1);
+	// 	this.versusData = new int[this.N][this.N];
+	//
+	// 	for(int j = 0; j < N+2; j++) {
+	// 		this.teamData[i][j] = s.nextInt();
+	// 		data = this.teamData[i][j];
+	// 		if(j >= 2 && data > 0 && this.versusData[i][j] == 0) { // versus Columns
+	// 			this.versusData[i] +=1;
+	// 			Fe = new FlowEdge(-1, i*n+j, data); // i*n+j represents the games between i and j
+	// 			iedge = new FlowEdge(i*n+j, i, Double.POSITIVE_INFINITY);
+	// 			jedge = new FlowEdge(i*n+j, j, Double.POSITIVE_INFINITY);
+	// 			// edges to t
+	// 			itEdge = new FlowEdge(i, N*N+1, );
+	// 			itEdge = new FlowEdge(j, N*N+1);
+	// 			FlowNetworks[i].addEdge(Fe);
+	// 		}
+	// 		printTeamData();
+	// 	}
+	// }
 
 	/* main()
 	   Contains code to test the BaseballElimantion function. You may modify the
