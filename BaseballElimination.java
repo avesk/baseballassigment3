@@ -49,6 +49,7 @@ public class BaseballElimination{
 		public String name;
 		public boolean eliminated = false;
 		public int index;
+		public int[][] marked;
 
 		public TeamFlowData(int N, int i) {
 			this.N = N;
@@ -56,20 +57,23 @@ public class BaseballElimination{
 			this.FlowNet = new FlowNetwork(N*N + N+1);
 			this.eliminated = false;
 			this.index = i;
+			this.marked = new int[N][N];
 		}
 
 		public boolean setWEdges(TeamFlowData[] teams) {
 			int W;
 			for(int i = 0; i < this.N; i++) {
+				if(i == this.index) continue;
+				
 				W = this.wins + this.gamesLeft - teams[i].wins;
-				System.out.printf("Team: %s: Wins: %d + gamesLeft: %d - %sWins(%d) = %d", this.name, this.wins, this.gamesLeft, teams[i].name, teams[i].wins, W);
-				System.out.println();
+				// System.out.printf("Team: %s: Wins: %d + gamesLeft: %d - %sWins(%d) = %d", this.name, this.wins, this.gamesLeft, teams[i].name, teams[i].wins, W);
+				// System.out.println();
 				if(W < 0) {
 					this.eliminated = true;
 					return true;
 				}
 
-				this.addEdge(new FlowEdge(index+1, this.V()-1, W));
+				this.addEdge(new FlowEdge(i+1, this.V()-1, W));
 			}
 			return false;
 		}
@@ -101,19 +105,31 @@ public class BaseballElimination{
 	public BaseballElimination(Scanner s){
 		this.N = s.nextInt();
 		this.Teams = this.initializeTeams(this.N);
+		FordFulkerson Ff;
+
 		for(int i = 0; i < N; i++) {
 			this.addTeamDataToFlows(i, s);
  		}
+
 		for(int i = 0; i < N; i++) {
-			this.Teams[i].setWEdges(this.Teams); // eliminated?
+			this.Teams[i].setWEdges(this.Teams);
 		}
 
 		for(TeamFlowData team : this.Teams) {
+			Ff = new FordFulkerson(team.FlowNet, 0, team.V()-1);
+			if(Ff.inCut(team.V()-1)) {
+				team.eliminated = true;
+			}
+			System.out.println();
+			System.out.printf("Name: %s", team.name);
+			System.out.println();
+			for(FlowEdge e : team.FlowNet.edges()) {
+				System.out.println(e);
+			}
 			if(team.eliminated) {
-				eliminated.add(team.name);
+				this.eliminated.add(team.name);
 			}
 		}
-		// this.printTeamData();
 	}
 
 	public TeamFlowData[] initializeTeams(int N) {
@@ -131,12 +147,12 @@ public class BaseballElimination{
 		team.name = s.next();
 		team.wins = s.nextInt();
 		team.gamesLeft = s.nextInt();
-		System.out.printf("Name: %s\n Wins: %d\n GamesLeft: %d\n VersusData:\n", team.name, team.wins, team.gamesLeft);
+		// System.out.printf("Name: %s\n Wins: %d\n GamesLeft: %d\n VersusData:\n", team.name, team.wins, team.gamesLeft);
 		for(int j = 3; j < N+3; j++) {
 			numGames = s.nextInt();
-			System.out.printf("vs%d: %d\n", j-3, numGames);
+			// System.out.printf("vs%d: %d\n", j-3, numGames);
 			if(numGames != 0) {
-				this.addVersusEdges(i, j, numGames);
+				this.addVersusEdges(i, j-3, numGames);
 			}
 		}
 	}
@@ -146,69 +162,27 @@ public class BaseballElimination{
 		int N = this.N;
 		int versusIndex;
 		FlowEdge sToVersusEdge, iEdge, jEdge;
+		// System.out.println();
+		// System.out.printf("Adding Versus Edges from %s\n", teams[i].name);
 		for(int k = 0; k < N; k++) {
-			if(k == i) continue;
-			versusIndex = i*N+(j+1); // Represents the index of the i vs j games left vertex
+			if( (k == i || k == j) || teams[k].marked[i][j] == 1 ) continue;
+			versusIndex = i*N+j+1; // Represents the index of the i vs j games left vertex
 			sToVersusEdge = new FlowEdge(0, versusIndex, numGames);
 			iEdge = new FlowEdge(versusIndex, i+1, Double.POSITIVE_INFINITY);
 			jEdge = new FlowEdge(versusIndex, j+1, Double.POSITIVE_INFINITY);
+
 			teams[k].addEdge(sToVersusEdge);
 			teams[k].addEdge(iEdge);
 			teams[k].addEdge(jEdge);
+			teams[k].marked[i][j] = 1;
+			teams[k].marked[j][i] = 1;
+			// System.out.printf("i: %d, j: %d\n", i+1, j+1);
+			// System.out.println("adding: " + sToVersusEdge.toString() + " to " + (k+1));
+			// System.out.println("adding: " + iEdge.toString() + " to " + (k+1));
+			// System.out.println("adding: " + jEdge.toString() + " to " + (k+1));
+			// System.out.println();
 		}
 	}
-
-	// public FlowNetwork buildFlowNetwork() {
-	// 	FlowNetwork FlowNet = new FlowNetwork();
-	// }
-
-	// public void printTeamData() {
-	// 	for(int i = 0; i < this.N; i++) {
-	// 		System.out.printf("%s:    ", this.teams[i]);
-	// 		for(int j = 0; j < N+2; j++) {
-	// 			System.out.printf("%d, ", this.teamData[i][j]);
-	// 		}
-	// 		System.out.println();
-	// 	}
-	// 	System.out.println();
-	// }
-
-	// public void buildTeamsData(Scanner s) {
-	// 	this.N = s.nextInt();
-	// 	int N = this.N;
-	// 	this.FlowNetworks = new FlowNetwork[N];
-	// 	// Rows: Team
-	// 	// Columns: 0: wins, 1: games left, (2 to N+2-1): games left versus Ni
-	// 	this.teamData = new int[N][N+2];
-	// 	this.teams = new String[N];
-	//
-	// 	for(int i = 0; i < N; i++) {
-	// 		this.setDataForTeam(i, s);
- 	// 	}
-	// }
-
-	// public void setDataForTeamDEPRECATED(int i, Scanner s) {
-	// 	int data;
-	// 	FlowEdge sEdge, iedge, jedge, itEdge, jtEdge;
-	// 	this.FlowNetworks[i] = new FlowNetwork(this.N*this.N +1);
-	// 	this.versusData = new int[this.N][this.N];
-	//
-	// 	for(int j = 0; j < N+2; j++) {
-	// 		this.teamData[i][j] = s.nextInt();
-	// 		data = this.teamData[i][j];
-	// 		if(j >= 2 && data > 0 && this.versusData[i][j] == 0) { // versus Columns
-	// 			this.versusData[i] +=1;
-	// 			Fe = new FlowEdge(-1, i*n+j, data); // i*n+j represents the games between i and j
-	// 			iedge = new FlowEdge(i*n+j, i, Double.POSITIVE_INFINITY);
-	// 			jedge = new FlowEdge(i*n+j, j, Double.POSITIVE_INFINITY);
-	// 			// edges to t
-	// 			itEdge = new FlowEdge(i, N*N+1, );
-	// 			itEdge = new FlowEdge(j, N*N+1);
-	// 			FlowNetworks[i].addEdge(Fe);
-	// 		}
-	// 		printTeamData();
-	// 	}
-	// }
 
 	/* main()
 	   Contains code to test the BaseballElimantion function. You may modify the
