@@ -55,7 +55,7 @@ public class BaseballElimination{
 		public TeamFlowNetwork(int N, int i) {
 			this.N = N;
 			this.W = new int[N];
-			this.FlowNet = new FlowNetwork(N*N + N+1);
+			this.FlowNet = new FlowNetwork(N*N + N+2);
 			this.eliminated = false;
 			this.index = i;
 			this.marked = new int[N][N];
