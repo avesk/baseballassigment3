@@ -45,7 +45,8 @@ public class BaseballElimination{
 		public FlowNetwork FlowNet;
 		public int[] W; // wins + gamesLeft - Wi
 		public int N;
-		public FlowEdge[] versusEdges;
+		// public FlowEdge[] versusEdges;
+		public int vsEdgeCount;
 		public String name;
 		public boolean eliminated = false;
 		public int index;
@@ -171,7 +172,7 @@ public class BaseballElimination{
 		// System.out.printf("Adding Versus Edges from %s\n", teams[i].name);
 		for(int k = 0; k < N; k++) {
 			if( k == i || k == j || teams[k].marked[i][j] == 1 ) continue;
-			versusIndex = i*N+j+1; // Represents the index of the i vs j games left vertex
+			versusIndex = N+1 + teams[k].vsEdgeCount +1; // Represents the index of the i vs j games left vertex
 			sToVersusEdge = new FlowEdge(0, versusIndex, numGames);
 			iEdge = new FlowEdge(versusIndex, i+1, Double.POSITIVE_INFINITY);
 			jEdge = new FlowEdge(versusIndex, j+1, Double.POSITIVE_INFINITY);
@@ -181,6 +182,7 @@ public class BaseballElimination{
 			teams[k].addEdge(jEdge);
 			teams[k].marked[i][j] = 1;
 			teams[k].marked[j][i] = 1;
+			teams[k].vsEdgeCount++;
 			// System.out.printf("i: %d, j: %d\n", i+1, j+1);
 			// System.out.println("adding: " + sToVersusEdge.toString() + " to " + (k+1));
 			// System.out.println("adding: " + iEdge.toString() + " to " + (k+1));

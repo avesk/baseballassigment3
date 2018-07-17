@@ -1,0 +1,2 @@
+Reading input values from testscript_files/teams50.txt.
+No teams have been eliminated.

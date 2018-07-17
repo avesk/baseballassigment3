@@ -1,0 +1,2 @@
+Reading input values from testscript_files/teams4b.txt.
+Teams eliminated: [Hufflepuff, Ravenclaw, Slytherin]

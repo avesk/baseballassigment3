@@ -1,0 +1,2 @@
+Reading input values from testscript_files/teams12.txt.
+Teams eliminated: [Japan, Serbia, Egypt, China]

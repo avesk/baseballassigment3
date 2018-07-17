@@ -1,0 +1,2 @@
+Reading input values from testscript_files/teams4.txt.
+Teams eliminated: [Philadelphia, Montreal]

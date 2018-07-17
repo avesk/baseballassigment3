@@ -1,0 +1,2 @@
+Reading input values from testscript_files/teams29.txt.
+Teams eliminated: [Detroit, Golden_State, Houston, Indiana, LA_Clippers, LA_Lakers, Memphis, New_Jersey, New_Orleans, New_York, Orlando, Phoenix, Portand, San_Antonio, Toronto, Utah, Washington]

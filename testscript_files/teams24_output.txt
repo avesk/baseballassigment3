@@ -1,0 +1,2 @@
+Reading input values from testscript_files/teams24.txt.
+Teams eliminated: [Team4, Team5, Team7, Team9, Team11, Team12, Team13, Team16, Team19, Team23]
