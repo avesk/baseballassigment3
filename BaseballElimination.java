@@ -67,8 +67,6 @@ public class BaseballElimination{
 				if(i == this.index) continue;
 
 				W = this.wins + this.gamesLeft - teams[i].wins;
-				// System.out.printf("Team: %s: Wins: %d + gamesLeft: %d - %sWins(%d) = %d", this.name, this.wins, this.gamesLeft, teams[i].name, teams[i].wins, W);
-				// System.out.println();
 				if(W < 0) {
 					this.eliminated = true;
 					return true;
@@ -94,6 +92,9 @@ public class BaseballElimination{
 	private int N;
 	TeamFlowNetwork[] Teams;
 	private int[][] versusData;
+	// the minumum number of a maximum wins a team need to have to not be eliminated
+	// right off the bat
+	private int minMaxWins;
 
 	/* BaseballElimination(s)
 		Given an input stream connected to a collection of baseball division
@@ -103,7 +104,7 @@ public class BaseballElimination{
 		of inter-divisional games between all other teams in the division, the current
 		team is eliminated.
 	*/
-	public BaseballElimination(Scanner s){
+	public BaseballElimination(Scanner s) {
 		this.N = s.nextInt();
 		// Initialize team flow networks
 		this.Teams = this.initializeTeams(this.N);
@@ -115,6 +116,7 @@ public class BaseballElimination{
  		}
 
 		// Set W edges for each TeamFlowNetwork
+		// determines if the team is eliminated before doing Fulkerson's
 		for(int i = 0; i < N; i++) {
 			this.Teams[i].setWEdges(this.Teams);
 		}
@@ -152,7 +154,6 @@ public class BaseballElimination{
 		team.name = s.next();
 		team.wins = s.nextInt();
 		team.gamesLeft = s.nextInt();
-		// System.out.printf("Name: %s\n Wins: %d\n GamesLeft: %d\n VersusData:\n", team.name, team.wins, team.gamesLeft);
 		// for each versus column, add this data to all relevant TeamFlowNetworks
 		for(int j = 0; j < N; j++) {
 			numGames = s.nextInt();
@@ -168,8 +169,6 @@ public class BaseballElimination{
 		int N = this.N;
 		int versusIndex;
 		FlowEdge sToVersusEdge, iEdge, jEdge;
-		// System.out.println();
-		// System.out.printf("Adding Versus Edges from %s\n", teams[i].name);
 		for(int k = 0; k < N; k++) {
 			if( k == i || k == j || teams[k].marked[i][j] == 1 ) continue;
 			versusIndex = N+1 + teams[k].vsEdgeCount +1; // Represents the index of the i vs j games left vertex
@@ -183,11 +182,6 @@ public class BaseballElimination{
 			teams[k].marked[i][j] = 1;
 			teams[k].marked[j][i] = 1;
 			teams[k].vsEdgeCount++;
-			// System.out.printf("i: %d, j: %d\n", i+1, j+1);
-			// System.out.println("adding: " + sToVersusEdge.toString() + " to " + (k+1));
-			// System.out.println("adding: " + iEdge.toString() + " to " + (k+1));
-			// System.out.println("adding: " + jEdge.toString() + " to " + (k+1));
-			// System.out.println();
 		}
 	}
 
